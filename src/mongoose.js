@@ -27,26 +27,30 @@ export async function getCashedValue(dataType, ticker) {
 }
 
 export async function saveCache(request, ticker, stores) {
-  const allDataTypes = DATA_TYPES_BY_REQUEST[request];
-  if (!allDataTypes) return;
+  try {
+    const allDataTypes = DATA_TYPES_BY_REQUEST[request];
+    if (!allDataTypes) return;
 
-  const eligibleDataTypes = allDataTypes.filter(
-    (type) => !DISABLE_CACHE_BY_DATA_TYPE[type]
-  );
-  if (!eligibleDataTypes.length) return;
+    const eligibleDataTypes = allDataTypes.filter(
+      (type) => !DISABLE_CACHE_BY_DATA_TYPE[type]
+    );
+    if (!eligibleDataTypes.length) return;
 
-  const batch = Cache.collection.initializeUnorderedBulkOp();
-  eligibleDataTypes.forEach((dataType) => {
-    batch
-      .find({ ticker, dataType })
-      .upsert()
-      .replaceOne({
-        ticker,
-        dataType,
-        data: getDataMapper(dataType)(stores),
-        expireDate: moment(new Date()).endOf("day").toDate(),
-      });
-  });
+    const batch = Cache.collection.initializeUnorderedBulkOp();
+    eligibleDataTypes.forEach((dataType) => {
+      batch
+        .find({ ticker, dataType })
+        .upsert()
+        .replaceOne({
+          ticker,
+          dataType,
+          data: getDataMapper(dataType)(stores),
+          expireDate: moment(new Date()).endOf("day").toDate(),
+        });
+    });
 
-  batch.execute();
+    batch.execute();
+  } catch (e) {
+    console.error(e);
+  }
 }

@@ -14,20 +14,26 @@ export default function endpointFactory(dataType) {
   const mapper = getDataMapper(dataType);
 
   return async (req, res) => {
-    const ticker = req.params.ticker;
+    try {
+      const ticker = req.params.ticker;
 
-    if (!disableCache) {
-      const cachedData = await getCashedValue(dataType, ticker);
-      if (cachedData) return res.json(cachedData);
-    }
+      if (!disableCache) {
+        const cachedData = await getCashedValue(dataType, ticker);
+        if (cachedData) return res.json(cachedData);
+      }
 
-    const request = requests[0];
-    const yahooData = await yahooParser(request, ticker);
-    if (!yahooData) {
-      return res.status(404).json({ error: "Data is not found" });
+      const request = requests[0];
+      const yahooData = await yahooParser(request, ticker);
+      if (!yahooData) {
+        return res.status(404).json({ error: "Data is not found" });
+      }
+      const data = mapper(yahooData);
+      res.json(data);
+    } catch (e) {
+      console.error(e);
+      res.status(404).json({ error: "Not found" });
+      return;
     }
-    const data = mapper(yahooData);
-    res.json(data);
 
     saveCache(request, ticker, yahooData);
   };
