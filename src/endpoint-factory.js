@@ -23,9 +23,12 @@ export default function endpointFactory(dataType) {
       }
 
       const request = requests[0];
+      if (!request) {
+        return res.status(404).json({ error: "Not found" });
+      }
       const yahooData = await yahooParser(request, ticker);
       if (!yahooData) {
-        return res.status(404).json({ error: "Data is not found" });
+        return res.status(404).json({ error: "Not found" });
       }
       const data = mapper(yahooData);
       res.json(data);
